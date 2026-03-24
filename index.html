@@ -1,0 +1,1319 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>AI Knowledge Quiz 🤖 | Test Your Intelligence</title>
+  <meta name="description" content="Test your AI knowledge with this interactive, game-like quiz covering Machine Learning, Neural Networks, Deep Learning and more." />
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg: #050810;
+      --surface: rgba(255,255,255,0.04);
+      --surface2: rgba(255,255,255,0.08);
+      --border: rgba(255,255,255,0.1);
+      --text: #e8eaf6;
+      --muted: #7986cb;
+      --neon-blue: #00d4ff;
+      --neon-purple: #a855f7;
+      --neon-pink: #ec4899;
+      --neon-green: #22c55e;
+      --neon-yellow: #fbbf24;
+      --neon-red: #ef4444;
+      --correct: #22c55e;
+      --wrong: #ef4444;
+    }
+
+    html, body {
+      min-height: 100vh;
+      font-family: 'Outfit', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      overflow-x: hidden;
+    }
+
+    /* ── ANIMATED BACKGROUND ── */
+    #bg-canvas {
+      position: fixed;
+      inset: 0;
+      z-index: 0;
+      pointer-events: none;
+    }
+
+    /* ── SCREENS ── */
+    .screen {
+      display: none;
+      position: relative;
+      z-index: 10;
+      min-height: 100vh;
+    }
+    .screen.active { display: flex; flex-direction: column; align-items: center; justify-content: center; }
+
+    /* ── WELCOME SCREEN ── */
+    #screen-welcome {
+      padding: 2rem 1rem;
+      gap: 2.5rem;
+    }
+
+    .logo-area {
+      text-align: center;
+      animation: fadeDown 0.8s ease both;
+    }
+    .logo-emoji {
+      font-size: 5rem;
+      display: block;
+      animation: floatBob 3s ease-in-out infinite;
+      filter: drop-shadow(0 0 20px var(--neon-blue));
+    }
+    .logo-title {
+      font-size: clamp(2.2rem, 5vw, 3.5rem);
+      font-weight: 900;
+      background: linear-gradient(135deg, var(--neon-blue), var(--neon-purple), var(--neon-pink));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      line-height: 1.1;
+      letter-spacing: -1px;
+    }
+    .logo-sub {
+      margin-top: 0.5rem;
+      color: var(--muted);
+      font-size: 1.05rem;
+      font-weight: 400;
+    }
+
+    .category-label {
+      font-size: 1.1rem;
+      font-weight: 600;
+      color: var(--neon-blue);
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      text-align: center;
+      animation: fadeUp 0.8s 0.2s ease both;
+    }
+
+    .category-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 1.2rem;
+      max-width: 640px;
+      width: 100%;
+      animation: fadeUp 0.8s 0.35s ease both;
+    }
+
+    .cat-card {
+      position: relative;
+      background: var(--surface);
+      border: 1.5px solid var(--border);
+      border-radius: 20px;
+      padding: 2rem 1.5rem;
+      cursor: pointer;
+      text-align: center;
+      overflow: hidden;
+      transition: transform 0.3s cubic-bezier(.34,1.56,.64,1), box-shadow 0.3s, border-color 0.3s;
+      backdrop-filter: blur(16px);
+      user-select: none;
+    }
+    .cat-card::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      opacity: 0;
+      background: var(--card-grad);
+      transition: opacity 0.3s;
+      border-radius: inherit;
+    }
+    .cat-card:hover { transform: translateY(-6px) scale(1.04); }
+    .cat-card:hover::before { opacity: 1; }
+    .cat-card:hover { box-shadow: 0 0 40px var(--card-glow), 0 20px 40px rgba(0,0,0,0.4); border-color: var(--card-color); }
+    .cat-card.selected { border-color: var(--card-color); box-shadow: 0 0 50px var(--card-glow); transform: scale(1.06); }
+    .cat-card.selected::before { opacity: 1; }
+
+    .cat-card[data-cat="cs"]   { --card-color: var(--neon-blue);   --card-grad: linear-gradient(135deg,rgba(0,212,255,.15),transparent); --card-glow: rgba(0,212,255,.4); }
+    .cat-card[data-cat="mech"] { --card-color: #f97316; --card-grad: linear-gradient(135deg,rgba(249,115,22,.15),transparent); --card-glow: rgba(249,115,22,.4); }
+    .cat-card[data-cat="civil"]{ --card-color: var(--neon-yellow);  --card-grad: linear-gradient(135deg,rgba(251,191,36,.15),transparent); --card-glow: rgba(251,191,36,.4); }
+    .cat-card[data-cat="ai"]   { --card-color: var(--neon-purple);  --card-grad: linear-gradient(135deg,rgba(168,85,247,.15),transparent); --card-glow: rgba(168,85,247,.4); }
+
+    .cat-emoji { font-size: 3rem; display: block; margin-bottom: 0.6rem; position: relative; z-index: 1; transition: transform 0.3s; }
+    .cat-card:hover .cat-emoji { transform: scale(1.2) rotate(-5deg); }
+    .cat-name { font-size: 1.1rem; font-weight: 700; position: relative; z-index: 1; }
+    .cat-desc { font-size: 0.8rem; color: var(--muted); margin-top: 0.3rem; position: relative; z-index: 1; }
+
+    /* ripple */
+    .ripple {
+      position: absolute;
+      border-radius: 50%;
+      background: rgba(255,255,255,0.25);
+      transform: scale(0);
+      animation: rippleAnim 0.6s linear;
+      pointer-events: none;
+      z-index: 5;
+    }
+    @keyframes rippleAnim {
+      to { transform: scale(4); opacity: 0; }
+    }
+
+    .start-btn {
+      margin-top: 0.5rem;
+      padding: 1rem 3rem;
+      font-size: 1.15rem;
+      font-weight: 800;
+      font-family: 'Outfit', sans-serif;
+      border: none;
+      border-radius: 50px;
+      background: linear-gradient(135deg, var(--neon-blue), var(--neon-purple));
+      color: #fff;
+      cursor: pointer;
+      transition: transform 0.2s, box-shadow 0.2s, opacity 0.3s;
+      box-shadow: 0 0 30px rgba(0,212,255,0.4);
+      animation: fadeUp 0.8s 0.6s ease both;
+      letter-spacing: 0.5px;
+      opacity: 0.4;
+      pointer-events: none;
+    }
+    .start-btn.ready { opacity: 1; pointer-events: all; }
+    .start-btn:hover { transform: scale(1.06); box-shadow: 0 0 50px rgba(0,212,255,0.7); }
+    .start-btn:active { transform: scale(0.97); }
+
+    /* ── LOADER SCREEN ── */
+    #screen-loader {
+      gap: 2rem;
+    }
+    .loader-emoji { font-size: 5rem; animation: spin360 1s linear infinite; filter: drop-shadow(0 0 20px var(--neon-purple)); }
+    .loader-text { font-size: 1.5rem; font-weight: 700; color: var(--neon-blue); }
+    .loader-bar-wrap { width: 300px; height: 6px; background: var(--surface2); border-radius: 10px; overflow: hidden; }
+    .loader-bar { height: 100%; background: linear-gradient(90deg, var(--neon-blue), var(--neon-purple)); border-radius: 10px; width: 0; transition: width 0.05s linear; }
+
+    /* ── QUIZ SCREEN ── */
+    #screen-quiz {
+      padding: 2rem 1rem;
+      gap: 1.5rem;
+      justify-content: flex-start;
+    }
+    .quiz-top {
+      width: 100%;
+      max-width: 720px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 1rem;
+    }
+    .q-counter {
+      font-size: 0.9rem;
+      font-weight: 700;
+      color: var(--neon-blue);
+      font-family: 'JetBrains Mono', monospace;
+      letter-spacing: 1px;
+    }
+    .score-display {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 30px;
+      padding: 0.4rem 1rem;
+      font-size: 0.9rem;
+      font-weight: 700;
+    }
+    .score-val { color: var(--neon-yellow); }
+    .streak-badge {
+      background: linear-gradient(135deg, #ff6b35, #ff9500);
+      border-radius: 20px;
+      padding: 0.3rem 0.8rem;
+      font-size: 0.8rem;
+      font-weight: 800;
+      display: none;
+      animation: pulse 0.5s ease;
+    }
+    .streak-badge.show { display: inline-flex; gap: 0.25rem; align-items: center; }
+
+    .progress-wrap {
+      width: 100%;
+      max-width: 720px;
+      height: 8px;
+      background: var(--surface2);
+      border-radius: 10px;
+      overflow: hidden;
+    }
+    .progress-bar {
+      height: 100%;
+      background: linear-gradient(90deg, var(--neon-blue), var(--neon-purple), var(--neon-pink));
+      border-radius: 10px;
+      transition: width 0.5s cubic-bezier(.34,1.56,.64,1);
+      box-shadow: 0 0 12px rgba(168,85,247,0.6);
+    }
+
+    .question-card {
+      width: 100%;
+      max-width: 720px;
+      background: var(--surface);
+      border: 1.5px solid var(--border);
+      border-radius: 24px;
+      padding: 2rem 2rem 1.5rem;
+      backdrop-filter: blur(20px);
+      animation: fadeZoom 0.5s cubic-bezier(.34,1.56,.64,1) both;
+      position: relative;
+      overflow: hidden;
+    }
+    .question-card::after {
+      content: '';
+      position: absolute;
+      top: -50%;
+      left: -50%;
+      width: 200%;
+      height: 200%;
+      background: radial-gradient(ellipse at 50% 50%, rgba(168,85,247,0.07) 0%, transparent 70%);
+      pointer-events: none;
+    }
+    .q-topic-tag {
+      display: inline-block;
+      background: rgba(168,85,247,0.15);
+      border: 1px solid rgba(168,85,247,0.3);
+      color: var(--neon-purple);
+      font-size: 0.75rem;
+      font-weight: 700;
+      padding: 0.25rem 0.75rem;
+      border-radius: 20px;
+      margin-bottom: 1rem;
+      letter-spacing: 1px;
+      text-transform: uppercase;
+    }
+    .q-text {
+      font-size: clamp(1.05rem, 2.5vw, 1.3rem);
+      font-weight: 600;
+      line-height: 1.5;
+      margin-bottom: 0.5rem;
+    }
+
+    .options-grid {
+      width: 100%;
+      max-width: 720px;
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 0.9rem;
+      animation: fadeUp 0.5s 0.1s ease both;
+    }
+
+    .option-btn {
+      position: relative;
+      background: var(--surface);
+      border: 1.5px solid var(--border);
+      border-radius: 16px;
+      padding: 1rem 1.2rem;
+      color: var(--text);
+      font-size: 0.95rem;
+      font-weight: 600;
+      font-family: 'Outfit', sans-serif;
+      cursor: pointer;
+      text-align: left;
+      display: flex;
+      align-items: flex-start;
+      gap: 0.75rem;
+      transition: transform 0.2s, box-shadow 0.2s, border-color 0.2s, background 0.2s;
+      overflow: hidden;
+      backdrop-filter: blur(12px);
+      line-height: 1.4;
+    }
+    .option-btn::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      opacity: 0;
+      background: linear-gradient(135deg, rgba(0,212,255,.1), rgba(168,85,247,.1));
+      transition: opacity 0.2s;
+      border-radius: inherit;
+    }
+    .option-btn:hover:not(:disabled) { transform: translateY(-2px); box-shadow: 0 8px 25px rgba(0,212,255,0.2); border-color: var(--neon-blue); }
+    .option-btn:hover:not(:disabled)::before { opacity: 1; }
+    .option-btn:active:not(:disabled) { transform: scale(0.98); }
+
+    .opt-letter {
+      min-width: 30px;
+      height: 30px;
+      border-radius: 8px;
+      background: var(--surface2);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.8rem;
+      font-weight: 800;
+      font-family: 'JetBrains Mono', monospace;
+      flex-shrink: 0;
+      transition: background 0.2s, color 0.2s;
+    }
+    .option-btn:hover:not(:disabled) .opt-letter { background: var(--neon-blue); color: #000; }
+
+    .option-btn.correct {
+      border-color: var(--correct);
+      background: rgba(34,197,94,0.12);
+      box-shadow: 0 0 30px rgba(34,197,94,0.4);
+      animation: correctPop 0.4s ease;
+    }
+    .option-btn.correct .opt-letter { background: var(--correct); color: #000; }
+    .option-btn.wrong {
+      border-color: var(--wrong);
+      background: rgba(239,68,68,0.12);
+      box-shadow: 0 0 30px rgba(239,68,68,0.4);
+      animation: shake 0.5s ease;
+    }
+    .option-btn.wrong .opt-letter { background: var(--wrong); color: #fff; }
+    .option-btn:disabled { cursor: not-allowed; }
+
+    .feedback-badge {
+      position: fixed;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%) scale(0);
+      font-size: 6rem;
+      z-index: 999;
+      pointer-events: none;
+      transition: transform 0.3s cubic-bezier(.34,1.56,.64,1), opacity 0.3s;
+      opacity: 0;
+    }
+    .feedback-badge.show { transform: translate(-50%, -50%) scale(1); opacity: 1; }
+    .feedback-badge.hide { transform: translate(-50%, -50%) scale(2); opacity: 0; }
+
+    /* ── RESULT SCREEN ── */
+    #screen-result {
+      padding: 2rem 1rem 3rem;
+      gap: 2rem;
+      justify-content: flex-start;
+    }
+    .result-header {
+      text-align: center;
+      animation: fadeDown 0.6s ease both;
+    }
+    .result-title {
+      font-size: 2.2rem;
+      font-weight: 900;
+      background: linear-gradient(135deg, var(--neon-blue), var(--neon-purple));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    .result-main {
+      width: 100%;
+      max-width: 700px;
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1.2rem;
+    }
+
+    .score-card {
+      background: var(--surface);
+      border: 1.5px solid var(--border);
+      border-radius: 24px;
+      padding: 2rem;
+      text-align: center;
+      backdrop-filter: blur(20px);
+      position: relative;
+      overflow: hidden;
+      animation: fadeZoom 0.5s 0.1s ease both;
+      grid-column: 1 / -1;
+    }
+    .score-card::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: radial-gradient(ellipse at 50% 0%, rgba(168,85,247,0.15), transparent 70%);
+      pointer-events: none;
+    }
+    .score-num {
+      font-size: clamp(4rem, 10vw, 6rem);
+      font-weight: 900;
+      font-family: 'JetBrains Mono', monospace;
+      background: linear-gradient(135deg, var(--neon-yellow), var(--neon-pink));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      line-height: 1;
+      position: relative;
+      z-index: 1;
+    }
+    .score-label { font-size: 1rem; color: var(--muted); margin-top: 0.3rem; position: relative; z-index: 1; }
+    .badge-wrap {
+      margin-top: 1.5rem;
+      position: relative;
+      z-index: 1;
+    }
+    .badge-emoji { font-size: 4rem; display: block; animation: floatBob 2s ease-in-out infinite; filter: drop-shadow(0 0 20px var(--neon-purple)); }
+    .badge-name {
+      font-size: 1.4rem;
+      font-weight: 800;
+      margin-top: 0.5rem;
+      background: linear-gradient(135deg, var(--neon-purple), var(--neon-pink));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    .feedback-card {
+      background: var(--surface);
+      border: 1.5px solid var(--border);
+      border-radius: 24px;
+      padding: 1.5rem;
+      backdrop-filter: blur(20px);
+      animation: fadeZoom 0.5s 0.25s ease both;
+    }
+    .tips-card {
+      background: var(--surface);
+      border: 1.5px solid var(--border);
+      border-radius: 24px;
+      padding: 1.5rem;
+      backdrop-filter: blur(20px);
+      animation: fadeZoom 0.5s 0.4s ease both;
+    }
+    .card-title {
+      font-size: 0.85rem;
+      font-weight: 700;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      color: var(--neon-blue);
+      margin-bottom: 1rem;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+    .feedback-message { font-size: 1.05rem; font-weight: 600; margin-bottom: 0.8rem; line-height: 1.4; }
+    .suggest-list { list-style: none; display: flex; flex-direction: column; gap: 0.5rem; }
+    .suggest-list li {
+      display: flex;
+      align-items: flex-start;
+      gap: 0.5rem;
+      font-size: 0.9rem;
+      color: #a5b4fc;
+      line-height: 1.4;
+    }
+    .suggest-list li::before { content: '→'; color: var(--neon-purple); flex-shrink: 0; font-weight: 700; }
+
+    .tips-list { list-style: none; display: flex; flex-direction: column; gap: 0.5rem; }
+    .tips-list li {
+      display: flex;
+      align-items: flex-start;
+      gap: 0.6rem;
+      font-size: 0.9rem;
+      color: #a5b4fc;
+      line-height: 1.4;
+    }
+    .tip-icon { flex-shrink: 0; }
+
+    .action-btns {
+      display: flex;
+      gap: 1rem;
+      flex-wrap: wrap;
+      justify-content: center;
+      animation: fadeUp 0.6s 0.6s ease both;
+    }
+    .btn-play-again {
+      padding: 0.9rem 2.5rem;
+      font-size: 1rem;
+      font-weight: 800;
+      font-family: 'Outfit', sans-serif;
+      border: none;
+      border-radius: 50px;
+      background: linear-gradient(135deg, var(--neon-blue), var(--neon-purple));
+      color: #fff;
+      cursor: pointer;
+      transition: transform 0.2s, box-shadow 0.2s;
+      box-shadow: 0 0 30px rgba(0,212,255,0.4);
+      letter-spacing: 0.5px;
+    }
+    .btn-play-again:hover { transform: scale(1.06); box-shadow: 0 0 50px rgba(0,212,255,0.7); }
+
+
+    /* ── CONFETTI ── */
+    .confetti-piece {
+      position: fixed;
+      width: 10px;
+      height: 10px;
+      border-radius: 2px;
+      animation: confettiFall linear forwards;
+      pointer-events: none;
+      z-index: 1000;
+    }
+    @keyframes confettiFall {
+      0%  { transform: translateY(-10px) rotate(0deg); opacity: 1; }
+      100%{ transform: translateY(110vh) rotate(720deg); opacity: 0; }
+    }
+
+    /* ── KEYFRAMES ── */
+    @keyframes fadeDown  { from { opacity:0; transform:translateY(-30px); } to { opacity:1; transform:none; } }
+    @keyframes fadeUp    { from { opacity:0; transform:translateY(30px);  } to { opacity:1; transform:none; } }
+    @keyframes fadeZoom  { from { opacity:0; transform:scale(0.8);         } to { opacity:1; transform:none; } }
+    @keyframes floatBob  { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-12px)} }
+    @keyframes spin360   { to{transform:rotate(360deg)} }
+    @keyframes shake     { 0%,100%{transform:none} 20%,60%{transform:translateX(-8px)} 40%,80%{transform:translateX(8px)} }
+    @keyframes correctPop{ 0%{transform:scale(1)} 40%{transform:scale(1.05)} 100%{transform:scale(1)} }
+    @keyframes pulse     { 0%,100%{transform:scale(1)} 50%{transform:scale(1.1)} }
+    @keyframes glowPulse { 0%,100%{text-shadow:0 0 20px var(--neon-blue)} 50%{text-shadow:0 0 40px var(--neon-blue),0 0 60px var(--neon-purple)} }
+    @keyframes countUp   { from{opacity:0;transform:translateY(20px)} to{opacity:1;transform:none} }
+
+    /* ── RESPONSIVE ── */
+    @media(max-width:600px) {
+      .category-grid { grid-template-columns: 1fr 1fr; gap: 0.8rem; }
+      .options-grid  { grid-template-columns: 1fr; }
+      .result-main   { grid-template-columns: 1fr; }
+      .score-card    { grid-column: 1; }
+      .cat-card      { padding: 1.2rem 1rem; }
+      .cat-emoji     { font-size: 2.2rem; }
+    }
+
+    /* ── TOAST ── */
+    .toast {
+      position: fixed;
+      bottom: 2rem;
+      left: 50%;
+      transform: translateX(-50%) translateY(20px);
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 0.7rem 1.5rem;
+      font-size: 0.95rem;
+      font-weight: 600;
+      opacity: 0;
+      transition: all 0.3s;
+      z-index: 2000;
+      backdrop-filter: blur(20px);
+      white-space: nowrap;
+    }
+    .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+  </style>
+</head>
+<body>
+
+<!-- Animated background canvas -->
+<canvas id="bg-canvas"></canvas>
+
+<!-- WELCOME SCREEN -->
+<section id="screen-welcome" class="screen active">
+  <div class="logo-area">
+    <span class="logo-emoji">🤖</span>
+    <h1 class="logo-title">AI Knowledge Quiz</h1>
+    <p class="logo-sub">Test your Artificial Intelligence brain power 🔥</p>
+  </div>
+
+  <div class="category-label">🎮 Choose Your Track</div>
+
+  <div class="category-grid">
+    <div class="cat-card" data-cat="cs" onclick="selectCategory(this,'Computer Science','💻')">
+      <span class="cat-emoji">💻</span>
+      <div class="cat-name">Computer Science</div>
+      <div class="cat-desc">Algorithms & AI systems</div>
+    </div>
+    <div class="cat-card" data-cat="mech" onclick="selectCategory(this,'Mechanical','⚙️')">
+      <span class="cat-emoji">⚙️</span>
+      <div class="cat-name">Mechanical</div>
+      <div class="cat-desc">Engineering meets AI</div>
+    </div>
+    <div class="cat-card" data-cat="civil" onclick="selectCategory(this,'Civil','🏗️')">
+      <span class="cat-emoji">🏗️</span>
+      <div class="cat-name">Civil</div>
+      <div class="cat-desc">Smart infrastructure</div>
+    </div>
+    <div class="cat-card" data-cat="ai" onclick="selectCategory(this,'AI & ML','🤖')">
+      <span class="cat-emoji">🤖</span>
+      <div class="cat-name">AI & ML</div>
+      <div class="cat-desc">Pure intelligence</div>
+    </div>
+  </div>
+
+  <button class="start-btn" id="start-btn" onclick="startQuiz()">🚀 Start Quiz</button>
+</section>
+
+<!-- LOADER SCREEN -->
+<section id="screen-loader" class="screen">
+  <div class="loader-emoji" id="loader-emoji">⚙️</div>
+  <div class="loader-text" id="loader-text">Loading questions...</div>
+  <div class="loader-bar-wrap">
+    <div class="loader-bar" id="loader-bar"></div>
+  </div>
+</section>
+
+<!-- QUIZ SCREEN -->
+<section id="screen-quiz" class="screen">
+  <div class="quiz-top">
+    <span class="q-counter" id="q-counter">Q 1 / 10</span>
+    <div style="display:flex;gap:.6rem;align-items:center;">
+      <div class="streak-badge" id="streak-badge">🔥 <span id="streak-val">0</span>x Streak!</div>
+      <div class="score-display">⭐ <span class="score-val" id="score-val">0</span> pts</div>
+    </div>
+  </div>
+
+  <div class="progress-wrap">
+    <div class="progress-bar" id="progress-bar" style="width:10%"></div>
+  </div>
+
+  <div class="question-card" id="question-card">
+    <div class="q-topic-tag" id="q-topic">Machine Learning</div>
+    <div class="q-text" id="q-text">Question text here</div>
+  </div>
+
+  <div class="options-grid" id="options-grid"></div>
+</section>
+
+<!-- RESULT SCREEN -->
+<section id="screen-result" class="screen">
+  <div class="result-header">
+    <div style="font-size:3rem;margin-bottom:.5rem;">🏆</div>
+    <h2 class="result-title">Quiz Complete!</h2>
+    <p style="color:var(--muted);margin-top:.3rem;">Here's how you performed</p>
+  </div>
+
+  <div class="result-main">
+    <div class="score-card">
+      <div class="score-num" id="result-score">0 / 10</div>
+      <div class="score-label">Correct Answers</div>
+      <div class="badge-wrap">
+        <span class="badge-emoji" id="badge-emoji">🤖</span>
+        <div class="badge-name" id="badge-name">AI Pro</div>
+      </div>
+    </div>
+
+    <div class="feedback-card">
+      <div class="card-title">📊 Performance Feedback</div>
+      <div class="feedback-message" id="feedback-msg"></div>
+      <ul class="suggest-list" id="suggest-list"></ul>
+    </div>
+
+    <div class="tips-card">
+      <div class="card-title">🚀 How To Improve</div>
+      <ul class="tips-list">
+        <li><span class="tip-icon">📚</span>Learn ML & DL fundamentals deeply</li>
+        <li><span class="tip-icon">🐍</span>Practice Python, TensorFlow & PyTorch</li>
+        <li><span class="tip-icon">🛠️</span>Build real-world AI projects</li>
+        <li><span class="tip-icon">📰</span>Follow AI research (arXiv, Papers with Code)</li>
+        <li><span class="tip-icon">🧩</span>Solve daily Kaggle & LeetCode challenges</li>
+        <li><span class="tip-icon">🎯</span>Take more quizzes to reinforce concepts</li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="action-btns">
+    <button class="btn-play-again" onclick="resetGame()">🔄 Play Again</button>
+  </div>
+</section>
+
+<!-- Feedback badges -->
+<div class="feedback-badge" id="feedback-badge">✅</div>
+
+<!-- Toast -->
+<div class="toast" id="toast"></div>
+
+<script>
+/* ================================================================
+   BACKGROUND CANVAS PARTICLES
+   ================================================================ */
+(function() {
+  const canvas = document.getElementById('bg-canvas');
+  const ctx = canvas.getContext('2d');
+  let W, H, particles = [];
+
+  function resize() {
+    W = canvas.width  = window.innerWidth;
+    H = canvas.height = window.innerHeight;
+  }
+  window.addEventListener('resize', resize);
+  resize();
+
+  const COLORS = ['rgba(0,212,255,', 'rgba(168,85,247,', 'rgba(236,72,153,', 'rgba(34,197,94,'];
+
+  for (let i = 0; i < 55; i++) {
+    particles.push({
+      x: Math.random() * window.innerWidth,
+      y: Math.random() * window.innerHeight,
+      r: Math.random() * 1.8 + 0.3,
+      dx: (Math.random() - 0.5) * 0.4,
+      dy: (Math.random() - 0.5) * 0.4,
+      c: COLORS[Math.floor(Math.random() * COLORS.length)],
+      a: Math.random() * 0.5 + 0.2
+    });
+  }
+
+  function draw() {
+    ctx.clearRect(0, 0, W, H);
+    particles.forEach(p => {
+      ctx.beginPath();
+      ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
+      ctx.fillStyle = p.c + p.a + ')';
+      ctx.fill();
+      p.x += p.dx; p.y += p.dy;
+      if (p.x < 0 || p.x > W) p.dx *= -1;
+      if (p.y < 0 || p.y > H) p.dy *= -1;
+    });
+
+    // Draw faint lines between close particles
+    for (let i = 0; i < particles.length; i++) {
+      for (let j = i + 1; j < particles.length; j++) {
+        const d = Math.hypot(particles[i].x - particles[j].x, particles[i].y - particles[j].y);
+        if (d < 120) {
+          ctx.beginPath();
+          ctx.strokeStyle = `rgba(168,85,247,${0.08 * (1 - d / 120)})`;
+          ctx.lineWidth = 0.5;
+          ctx.moveTo(particles[i].x, particles[i].y);
+          ctx.lineTo(particles[j].x, particles[j].y);
+          ctx.stroke();
+        }
+      }
+    }
+    requestAnimationFrame(draw);
+  }
+  draw();
+})();
+
+/* ================================================================
+   QUESTION BANK — 75+ questions across all topics
+   10 are randomly selected each game
+   ================================================================ */
+const questionBank = [
+  // ── 🧠 ML / AI Core ──
+  {
+    topic: "Machine Learning",
+    text: "In supervised learning, what does the 'bias-variance tradeoff' fundamentally deal with?",
+    options: ["Model Underfitting vs. Overfitting", "Data Cleaning vs. Data Scaling", "Forward Pass vs. Backward Pass", "Cloud Storage vs. Edge Compute"],
+    answer: 0
+  },
+  {
+    topic: "Neural Networks",
+    text: "Which activation function is generally preferred to mitigate the vanishing gradient problem?",
+    options: ["Standard Sigmoid", "Classic Softmax", "Rectified Linear", "Hyperbolic Tanh"],
+    answer: 2
+  },
+  {
+    topic: "Deep Learning",
+    text: "In a Convolutional Neural Network, what is the 'pooling' layer's primary job?",
+    options: ["Apply Non-Linearity", "Reduce Spatial Size", "Increase Parameters", "Normalize Outputs"],
+    answer: 1
+  },
+  {
+    topic: "Transformer & NLP",
+    text: "In a modern Transformer model, what practically determines the attention weights?",
+    options: ["Softmax Output", "Queries & Keys", "Static Matrices", "Word Embeddings"],
+    answer: 1
+  },
+
+  // ── 🏢 CORPORATE + AI USAGE ──
+  {
+    topic: "Corporate AI",
+    text: "What is the most secure method for using generative AI to draft client emails?",
+    options: ["Fully Automated Sending", "Drafting With Edits", "Immediate Discarding", "Restricting Usage Entirely"],
+    answer: 1
+  },
+  {
+    topic: "Corporate AI",
+    text: "How should a manager use AI to synthesize highly complex monthly data reports?",
+    options: ["Blindly Trust AI", "Manual Drafting Only", "Structure & Verify", "Generate Titles Only"],
+    answer: 2
+  },
+
+  // ── 🤖 PROMPT ENGINEERING ──
+  {
+    topic: "Prompt Engineering",
+    text: "Which prompt style predictably yields the tightest, most actionable email response?",
+    options: ["Vague & Open-Ended", "Specific & Constrained", "Aggressive & Demanding", "Short & Unstructured"],
+    answer: 1
+  },
+  {
+    topic: "Prompt Engineering",
+    text: "What specifically does 'role-based prompting' successfully accomplish for the AI?",
+    options: ["Injects Stylistic Persona", "Enforces Random Output", "Bypasses Safety Filters", "Increases Token Limits"],
+    answer: 0
+  },
+  {
+    topic: "Prompt Engineering",
+    text: "If an AI generates a summary that is too long, what is the best iterative correction?",
+    options: ["Start A New Chat", "Add Word Constraints", "Change The Topic", "Ask It Politely"],
+    answer: 1
+  },
+
+  // ── 📊 PRODUCTIVITY & EFFICIENCY ──
+  {
+    topic: "Productivity",
+    text: "Which workflow highlights a highly effective and strategic professional AI utilization?",
+    options: ["Outsourcing Human Ethics", "Automating Tedious Data", "Replacing Strategy Calls", "Avoiding Tool Learning"],
+    answer: 1
+  },
+  {
+    topic: "Productivity",
+    text: "What behavioral pattern indicates an employee might be over-relying on AI tools?",
+    options: ["Brainstorming Initial Ideas", "Inability To Draft Alone", "Using Grammar Checkers", "Testing Beta Features"],
+    answer: 1
+  },
+
+  // ── ⚠️ AI RISKS & ETHICS ──
+  {
+    topic: "AI Ethics",
+    text: "When conducting sentiment analysis, what procedure strictly aligns with privacy norms?",
+    options: ["Uploading Raw Profiles", "Transmitting Anonymized Data", "Publishing Open Records", "Scraping Hidden Accounts"],
+    answer: 1
+  },
+  {
+    topic: "AI Ethics",
+    text: "Within an enterprise baseline, what legally constitutes an 'AI hallucination'?",
+    options: ["Abstract Art Generation", "Confident Factual Errors", "Extended Compute Cycles", "Refusing Toxic Queries"],
+    answer: 1
+  },
+
+  // ── 📈 DECISION MAKING ──
+  {
+    topic: "Decision Making",
+    text: "Under what operational circumstances must a professional rigorously verify AI content?",
+    options: ["During Software Crashes", "Handling High-Stakes Data", "Practically Never At All", "When Outputs Look Short"],
+    answer: 1
+  },
+  {
+    topic: "Decision Making",
+    text: "How should AI systems be implemented regarding high-stakes organizational strategy?",
+    options: ["Independent Execution", "Sole Analytical Baseline", "Baseline Aided Decisions", "Completely Blocked Out"],
+    answer: 2
+  },
+
+  // ── 🧩 PROBLEM SOLVING WITH AI ──
+  {
+    topic: "Problem Solving",
+    text: "What is the most rigorous methodology to fix a complex systemic failure using AI?",
+    options: ["Demand Immediate Repair", "Decompose And Iterate", "Blindly Copy Old Fixes", "Argue With Outputs"],
+    answer: 1
+  },
+  {
+    topic: "Problem Solving",
+    text: "An AI provides python code to fix a bug, but you don't understand it. What now?",
+    options: ["Push Directly To Prod", "Instantly Discard Code", "Ask Code Explanation", "Search StackOverflow Instead"],
+    answer: 2
+  },
+
+  // ── 💻 ROLE-BASED AI USAGE ──
+  {
+    topic: "Role-Based AI",
+    text: "Operating as an HR Manager, what is the most ethical implementation of an AI tool?",
+    options: ["Autonomous Rejections", "Guided Applicant Parsing", "Dictating Final Salaries", "Predicting Personalities"],
+    answer: 1
+  },
+
+  // ── ⚙️ ADVANCED AI USAGE ──
+  {
+    topic: "Advanced AI",
+    text: "Which technical combination reliably establishes a powerful, automated corporate AI workflow?",
+    options: ["Manual Spreadsheet Entry", "Unformatted Text Dumping", "Webhooks & Middlewares", "Isolated Desktop Folders"],
+    answer: 2
+  },
+
+  // ── 🎯 PROMPT QUALITY EVALUATION ──
+  {
+    topic: "Prompt Quality",
+    text: "Why do excessively vague conversational inquiries almost universally fail to work?",
+    options: ["Blocked By Safeties", "Random Syntax Variations", "Missing Context Vectors", "Massive Token Inflation"],
+    answer: 2
+  },
+
+  // ── 🧠 CRITICAL THINKING ──
+  {
+    topic: "Critical Thinking",
+    text: "An enterprise AI interface assertively quotes an exact numerical stat. How do you react?",
+    options: ["Implicitly Trust Output", "Verify Raw Numeric Source", "Ignore Unless Contradictory", "Forcefully Command Refetch"],
+    answer: 1
+  },
+
+  // ── 🎮 SCENARIO-BASED DECISIONS ──
+  {
+    topic: "Scenario Decision",
+    text: "A client asks if your important strategy report was written by AI. What do you do?",
+    options: ["Fiercely Deny Everything", "Demonstrate Transparency", "Blame AI Architecture", "Seamlessly Change Topic"],
+    answer: 1
+  }
+];
+
+// Active questions for this round (10 randomly picked each game)
+let questions = [];
+
+function pickRandomQuestions(n) {
+  const shuffled = [...questionBank].sort(() => Math.random() - 0.5);
+  return shuffled.slice(0, n);
+}
+
+let selectedCategory = null;
+let currentQ = 0;
+let score = 0;
+let streak = 0;
+let maxStreak = 0;
+let answered = false;
+
+/* ================================================================
+   SCREEN MANAGEMENT
+   ================================================================ */
+function showScreen(id) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+/* ================================================================
+   CATEGORY SELECTION
+   ================================================================ */
+function selectCategory(el, name, emoji) {
+  document.querySelectorAll('.cat-card').forEach(c => c.classList.remove('selected'));
+  el.classList.add('selected');
+  selectedCategory = { name, emoji };
+
+  // Ripple
+  const ripple = document.createElement('div');
+  ripple.className = 'ripple';
+  const size = Math.max(el.offsetWidth, el.offsetHeight) * 1.5;
+  ripple.style.cssText = `width:${size}px;height:${size}px;top:50%;left:50%;margin:-${size/2}px 0 0 -${size/2}px;`;
+  el.appendChild(ripple);
+  setTimeout(() => ripple.remove(), 700);
+
+  document.getElementById('start-btn').classList.add('ready');
+}
+
+/* ================================================================
+   START QUIZ → LOADER
+   ================================================================ */
+function startQuiz() {
+  if (!selectedCategory) return;
+  showScreen('screen-loader');
+
+  document.getElementById('loader-emoji').textContent = selectedCategory.emoji;
+  document.getElementById('loader-text').textContent = `Loading ${selectedCategory.name} Questions...`;
+
+  let pct = 0;
+  const bar = document.getElementById('loader-bar');
+  const iv = setInterval(() => {
+    pct += 4;
+    bar.style.width = Math.min(pct, 100) + '%';
+    if (pct >= 100) {
+      clearInterval(iv);
+      setTimeout(() => beginQuiz(), 300);
+    }
+  }, 40);
+}
+
+/* ================================================================
+   BEGIN QUIZ
+   ================================================================ */
+function beginQuiz() {
+  currentQ = 0;
+  score = 0;
+  streak = 0;
+  maxStreak = 0;
+  document.getElementById('score-val').textContent = '0';
+  showScreen('screen-quiz');
+  renderQuestion();
+}
+
+/* ================================================================
+   RENDER QUESTION
+   ================================================================ */
+function renderQuestion() {
+  answered = false;
+  const q = questions[currentQ];
+  const total = questions.length;
+
+  document.getElementById('q-counter').textContent = `Q ${currentQ + 1} / ${total}`;
+  document.getElementById('progress-bar').style.width = `${((currentQ + 1) / total) * 100}%`;
+  document.getElementById('q-topic').textContent = q.topic;
+  document.getElementById('q-text').textContent = q.text;
+
+  // Animate question card
+  const card = document.getElementById('question-card');
+  card.style.animation = 'none';
+  void card.offsetWidth;
+  card.style.animation = 'fadeZoom 0.45s cubic-bezier(.34,1.56,.64,1) both';
+
+  // Build options
+  const grid = document.getElementById('options-grid');
+  grid.innerHTML = '';
+  grid.style.animation = 'none';
+  void grid.offsetWidth;
+  grid.style.animation = 'fadeUp 0.45s 0.1s ease both';
+
+  const letters = ['A', 'B', 'C', 'D'];
+  q.options.forEach((opt, i) => {
+    const btn = document.createElement('button');
+    btn.className = 'option-btn';
+    btn.id = `opt-${i}`;
+    btn.innerHTML = `<span class="opt-letter">${letters[i]}</span><span>${opt}</span>`;
+    btn.onclick = () => selectAnswer(i, q.answer);
+    grid.appendChild(btn);
+  });
+}
+
+/* ================================================================
+   SELECT ANSWER
+   ================================================================ */
+function selectAnswer(chosen, correct) {
+  if (answered) return;
+  answered = true;
+
+  const btns = document.querySelectorAll('.option-btn');
+  btns.forEach(b => b.disabled = true);
+
+  const fbBadge = document.getElementById('feedback-badge');
+
+  if (chosen === correct) {
+    btns[chosen].classList.add('correct');
+    score += 100 + streak * 10;
+    streak++;
+    if (streak > maxStreak) maxStreak = streak;
+    document.getElementById('score-val').textContent = score;
+
+    fbBadge.textContent = '✅';
+    flashFeedback(fbBadge, true);
+    spawnConfetti(6);
+  } else {
+    btns[chosen].classList.add('wrong');
+    btns[correct].classList.add('correct');
+    streak = 0;
+
+    fbBadge.textContent = '❌';
+    flashFeedback(fbBadge, false);
+  }
+
+  // Streak badge
+  const sb = document.getElementById('streak-badge');
+  if (streak >= 2) {
+    document.getElementById('streak-val').textContent = streak;
+    sb.classList.add('show');
+  } else {
+    sb.classList.remove('show');
+  }
+
+  // Next question after delay
+  setTimeout(() => nextQuestion(), 1800);
+}
+
+function flashFeedback(el, ok) {
+  el.className = 'feedback-badge show';
+  el.style.filter = ok
+    ? 'drop-shadow(0 0 30px var(--correct))'
+    : 'drop-shadow(0 0 30px var(--wrong))';
+  setTimeout(() => {
+    el.classList.remove('show');
+    el.classList.add('hide');
+    setTimeout(() => { el.classList.remove('hide'); }, 400);
+  }, 900);
+}
+
+/* ================================================================
+   NEXT QUESTION
+   ================================================================ */
+function nextQuestion() {
+  currentQ++;
+  if (currentQ >= questions.length) {
+    showResults();
+  } else {
+    // Brief between-question loader
+    showScreen('screen-loader');
+    document.getElementById('loader-emoji').textContent = '🧠';
+    document.getElementById('loader-text').textContent = `Question ${currentQ + 1} incoming...`;
+    const bar = document.getElementById('loader-bar');
+    bar.style.width = '0';
+    let pct = 0;
+    const iv = setInterval(() => {
+      pct += 8;
+      bar.style.width = Math.min(pct, 100) + '%';
+      if (pct >= 100) {
+        clearInterval(iv);
+        setTimeout(() => { showScreen('screen-quiz'); renderQuestion(); }, 150);
+      }
+    }, 25);
+  }
+}
+
+/* ================================================================
+   SHOW RESULTS
+   ================================================================ */
+function showResults() {
+  showScreen('screen-result');
+
+  const correctCount = Math.round(score / 100); // rough estimate
+  // Actually track correctly
+  showScreen('screen-result');
+  animateScore();
+  setBadgeAndFeedback();
+  spawnConfetti(60);
+}
+
+// Track correct answers properly
+let correctAnswers = 0;
+const origSelectAnswer = selectAnswer;
+
+// Override to track correctly
+function selectAnswer(chosen, correct) {
+  if (answered) return;
+  answered = true;
+
+  if (chosen === correct) correctAnswers++;
+
+  const btns = document.querySelectorAll('.option-btn');
+  btns.forEach(b => b.disabled = true);
+
+  const fbBadge = document.getElementById('feedback-badge');
+
+  if (chosen === correct) {
+    btns[chosen].classList.add('correct');
+    score += 100 + streak * 10;
+    streak++;
+    if (streak > maxStreak) maxStreak = streak;
+    document.getElementById('score-val').textContent = score;
+
+    fbBadge.textContent = '✅';
+    flashFeedback(fbBadge, true);
+    spawnConfetti(6);
+  } else {
+    btns[chosen].classList.add('wrong');
+    btns[correct].classList.add('correct');
+    streak = 0;
+
+    fbBadge.textContent = '❌';
+    flashFeedback(fbBadge, false);
+  }
+
+  const sb = document.getElementById('streak-badge');
+  if (streak >= 2) {
+    document.getElementById('streak-val').textContent = streak;
+    sb.classList.add('show');
+  } else {
+    sb.classList.remove('show');
+  }
+
+  setTimeout(() => nextQuestion(), 1800);
+}
+
+function beginQuiz() {
+  currentQ = 0;
+  score = 0;
+  streak = 0;
+  maxStreak = 0;
+  correctAnswers = 0;
+  questions = pickRandomQuestions(10);
+  document.getElementById('score-val').textContent = '0';
+  showScreen('screen-quiz');
+  renderQuestion();
+}
+
+function animateScore() {
+  const el = document.getElementById('result-score');
+  let n = 0;
+  const target = correctAnswers;
+  const iv = setInterval(() => {
+    n++;
+    el.textContent = `${n} / 10`;
+    if (n >= target) { clearInterval(iv); el.textContent = `${target} / 10`; }
+  }, 80);
+}
+
+function setBadgeAndFeedback() {
+  const c = correctAnswers;
+  let emoji, name, msg, suggests;
+
+  if (c <= 3) {
+    emoji = '😅'; name = 'Beginner';
+    msg = "You're just starting your AI journey — every expert was once a beginner!";
+    suggests = [
+      'Learn the basics of ML & AI concepts from scratch',
+      'Watch Andrew Ng\'s Machine Learning course on Coursera',
+      'Practice simple classification problems',
+      'Read "Hands-On ML with Scikit-Learn" by Aurélien Géron'
+    ];
+  } else if (c <= 6) {
+    emoji = '🙂'; name = 'Learner';
+    msg = "You have some understanding but need more clarity on core concepts.";
+    suggests = [
+      'Focus on supervised vs. unsupervised vs. reinforcement learning',
+      'Learn how gradient descent and backpropagation really work',
+      'Build small end-to-end ML projects on Kaggle',
+      'Understand evaluation metrics beyond accuracy'
+    ];
+  } else if (c <= 8) {
+    emoji = '💡'; name = 'Intermediate';
+    msg = "Good knowledge! You're getting strong. Keep pushing deeper!";
+    suggests = [
+      'Dive deep into transformers, attention mechanisms & NLP',
+      'Study advanced deep learning architectures (ResNet, BERT, GANs)',
+      'Work on real-world datasets with complex preprocessing',
+      'Start contributing to open-source AI projects'
+    ];
+  } else {
+    emoji = '🤖'; name = 'AI Pro 🔥';
+    msg = "Excellent! You have strong AI knowledge. You're in the top tier!";
+    suggests = [
+      'Explore cutting-edge research: Diffusion Models, LLMs, CV',
+      'Build full-stack AI applications and deploy them',
+      'Read NeurIPS / ICML / ICLR research papers',
+      'Mentor others and contribute to AI research'
+    ];
+  }
+
+  document.getElementById('badge-emoji').textContent = emoji;
+  document.getElementById('badge-name').textContent = name;
+  document.getElementById('feedback-msg').textContent = msg;
+
+  const sl = document.getElementById('suggest-list');
+  sl.innerHTML = '';
+  suggests.forEach(s => {
+    const li = document.createElement('li');
+    li.textContent = s;
+    sl.appendChild(li);
+  });
+}
+
+/* ================================================================
+   CONFETTI
+   ================================================================ */
+function spawnConfetti(count) {
+  const colors = ['#00d4ff','#a855f7','#ec4899','#22c55e','#fbbf24','#ff6b35','#fff'];
+  for (let i = 0; i < count; i++) {
+    const el = document.createElement('div');
+    el.className = 'confetti-piece';
+    el.style.cssText = `
+      left: ${Math.random() * 100}vw;
+      top: -10px;
+      background: ${colors[Math.floor(Math.random() * colors.length)]};
+      width: ${Math.random() * 10 + 5}px;
+      height: ${Math.random() * 10 + 5}px;
+      border-radius: ${Math.random() > 0.5 ? '50%' : '2px'};
+      animation-duration: ${Math.random() * 2 + 1.5}s;
+      animation-delay: ${Math.random() * 0.5}s;
+    `;
+    document.body.appendChild(el);
+    setTimeout(() => el.remove(), 4000);
+  }
+}
+
+/* ================================================================
+   RESET / SHARE / LEARN
+   ================================================================ */
+function resetGame() {
+  selectedCategory = null;
+  document.querySelectorAll('.cat-card').forEach(c => c.classList.remove('selected'));
+  document.getElementById('start-btn').classList.remove('ready');
+  document.getElementById('loader-bar').style.width = '0';
+  showScreen('screen-welcome');
+}
+
+function shareScore() {
+  const txt = `🤖 I scored ${correctAnswers}/10 on the AI Knowledge Quiz!\n🔥 Max streak: ${maxStreak}\n🚀 Try it yourself!`;
+  if (navigator.share) {
+    navigator.share({ title: 'AI Knowledge Quiz', text: txt });
+  } else {
+    navigator.clipboard.writeText(txt).then(() => showToast('📋 Score copied to clipboard!'));
+  }
+}
+
+function openLearn() {
+  window.open('https://www.coursera.org/learn/machine-learning', '_blank');
+}
+
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 2500);
+}
+</script>
+</body>
+</html>
